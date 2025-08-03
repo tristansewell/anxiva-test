@@ -8,7 +8,6 @@ st.set_page_config(page_title="Anxiva", page_icon="💬")
 st.title("🧠 Anxiva — Your Friendly Companion")
 st.markdown("A warm, safe place to talk. *(UK-based support)*")
 
-# Initialize history
 if "history" not in st.session_state:
     st.session_state.history = []
 
@@ -16,7 +15,7 @@ if "history" not in st.session_state:
 for sender, message in st.session_state.history:
     st.write(f"**{sender}:** {message}")
 
-# Input box and send button
+# Input area
 user_input = st.text_input("You:", key="input")
 send_clicked = st.button("Send")
 
@@ -24,17 +23,17 @@ if send_clicked and user_input:
     st.session_state.history.append(("You", user_input))
     low = user_input.lower()
 
-    # Crisis check
+    # Crisis keywords
     if any(k in low for k in ["suicide", "self-harm", "hurt myself", "kill myself", "end my life"]):
         crisis = (
             "I’m really sorry you’re feeling this way. You deserve help right now.  \n"
             "- 📞 Samaritans (UK): 116 123  \n"
             "- 🖥️ https://www.samaritans.org  \n"
-            "- 🚑 In immediate danger? Call 999."
+            "- 🚑 If you’re in immediate danger, call 999."
         )
         st.session_state.history.append(("Anxiva", crisis))
+
     else:
-        # Build messages for the API
         system_msg = {
             "role": "system",
             "content": (
@@ -58,6 +57,3 @@ if send_clicked and user_input:
             )
         reply = resp.choices[0].message.content.strip()
         st.session_state.history.append(("Anxiva", reply))
-
-    # Clear the input box
-    st.session_state.input = ""

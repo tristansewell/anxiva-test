@@ -8,18 +8,24 @@ st.set_page_config(page_title="Anxiva", page_icon="💬")
 st.title("🧠 Anxiva — Your Friendly Companion")
 st.markdown("A warm, safe place to talk. *(UK-based support)*")
 
+# Initialize history
 if "history" not in st.session_state:
     st.session_state.history = []
 
+# Display the full chat
 for sender, message in st.session_state.history:
     st.write(f"**{sender}:** {message}")
 
-user_input = st.text_input("You:", "")
-if user_input:
+# Input box and send button
+user_input = st.text_input("You:", key="input")
+send_clicked = st.button("Send")
+
+if send_clicked and user_input:
     st.session_state.history.append(("You", user_input))
     low = user_input.lower()
 
-    if any(k in low for k in ["suicide","self-harm","hurt myself","kill myself","end my life"]):
+    # Crisis check
+    if any(k in low for k in ["suicide", "self-harm", "hurt myself", "kill myself", "end my life"]):
         crisis = (
             "I’m really sorry you’re feeling this way. You deserve help right now.  \n"
             "- 📞 Samaritans (UK): 116 123  \n"
@@ -28,16 +34,21 @@ if user_input:
         )
         st.session_state.history.append(("Anxiva", crisis))
     else:
-        messages = [{
-            "role":"system","content":(
+        # Build messages for the API
+        system_msg = {
+            "role": "system",
+            "content": (
                 "You are Anxiva, a caring UK-based friend. "
-                "Never guess feelings—only respond to what’s shared. "
-                "Offer UK crisis links only on self-harm/suicide. "
+                "Only respond to what the user explicitly shares. "
+                "Offer UK crisis links only on self-harm or suicide mentions. "
                 "Otherwise, follow the user’s lead."
             )
-        }]
-        for s,m in st.session_state.history:
-            messages.append({"role":("user" if s=="You" else "assistant"),"content":m})
+        }
+        messages = [system_msg]
+        for s, m in st.session_state.history:
+            role = "user" if s == "You" else "assistant"
+            messages.append({"role": role, "content": m})
+
         with st.spinner("Anxiva is thinking..."):
             resp = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
@@ -45,7 +56,8 @@ if user_input:
                 temperature=0.8,
                 max_tokens=300
             )
-            reply = resp.choices[0].message.content.strip()
-        st.session_state.history.append(("Anxiva",reply))
+        reply = resp.choices[0].message.content.strip()
+        st.session_state.history.append(("Anxiva", reply))
 
-    st.experimental_rerun()
+    # Clear the input box
+    st.session_state.input = ""

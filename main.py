@@ -36,13 +36,12 @@ if send_clicked and user_input:
     if any(term in low for term in crisis_terms):
         reply = (
             "I’m really sorry you’re feeling this way. You deserve help right now.\n\n"
-            "If you feel you might harm yourself or are in crisis, please reach out immediately:\n"
+            "If you ever feel you might harm yourself or are in crisis, please reach out immediately:\n"
             "- **Samaritans (UK & ROI):** call 116 123 or email jo@samaritans.org\n"
             "- **NHS 111 (option 2):** for urgent mental health support\n\n"
             "You don’t have to face this alone."
         )
         st.session_state.history.append(("Anixva", reply))
-        st.session_state.input = ""
 
     else:
         # 3) Build the full message list, including system prompt + history
@@ -74,6 +73,8 @@ if send_clicked and user_input:
             full_reply += delta
             placeholder.markdown(f"**Anixva:** {full_reply}")
 
-        # 5) Save the final assistant reply & clear input
+        # 5) Save the final assistant reply
         st.session_state.history.append(("Anixva", full_reply))
-        st.session_state.input = ""
+
+    # No need to manually reset st.session_state.input
+    st.experimental_rerun()

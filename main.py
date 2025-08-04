@@ -2,58 +2,50 @@ import streamlit as st
 import openai
 import os
 
+# Fetch key
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-st.set_page_config(page_title="Anxiva", page_icon="💬")
-st.title("🧠 Anxiva — Your Friendly Companion")
+st.set_page_config(page_title="Anixva", page_icon="🧠")
+st.title("🧠 Anixva — Your Friendly Companion")
 st.markdown("A warm, safe place to talk. *(UK-based support)*")
 
+# --- Initialize history ---
 if "history" not in st.session_state:
     st.session_state.history = []
 
-# Display the full chat
-for sender, message in st.session_state.history:
-    st.write(f"**{sender}:** {message}")
-
-# Input area
-user_input = st.text_input("You:", key="input")
-send_clicked = st.button("Send")
-
-if send_clicked and user_input:
-    st.session_state.history.append(("You", user_input))
-    low = user_input.lower()
-
-    # Crisis keywords
-    if any(k in low for k in ["suicide", "self-harm", "hurt myself", "kill myself", "end my life"]):
-        crisis = (
-            "I’m really sorry you’re feeling this way. You deserve help right now.  \n"
-            "- 📞 Samaritans (UK): 116 123  \n"
-            "- 🖥️ https://www.samaritans.org  \n"
-            "- 🚑 If you’re in immediate danger, call 999."
-        )
-        st.session_state.history.append(("Anxiva", crisis))
-
+# --- Render past messages ---
+for sender, msg in st.session_state.history:
+    if sender == "You":
+        st.markdown(f"**You:** {msg}")
     else:
-        system_msg = {
-            "role": "system",
-            "content": (
-                "You are Anxiva, a caring UK-based friend. "
-                "Only respond to what the user explicitly shares. "
-                "Offer UK crisis links only on self-harm or suicide mentions. "
-                "Otherwise, follow the user’s lead."
-            )
-        }
-        messages = [system_msg]
-        for s, m in st.session_state.history:
-            role = "user" if s == "You" else "assistant"
-            messages.append({"role": role, "content": m})
+        st.markdown(f"**Anixva:** {msg}")
 
-        with st.spinner("Anxiva is thinking..."):
-            resp = openai.ChatCompletion.create(
-                model="gpt-3.5-turbo",
-                messages=messages,
-                temperature=0.8,
-                max_tokens=300
-            )
-        reply = resp.choices[0].message.content.strip()
-        st.session_state.history.append(("Anxiva", reply))
+# --- Input & Send button ---
+user_in = st.text_input("You:", key="inp")
+
+if st.button("Send") and user_in:
+    # Save user message
+    st.session_state.history.append(("You", user_in))
+
+    # Call OpenAI once
+    resp = openai.ChatCompletion.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "system", "content": "You’re Anixva ... (your prompt here)"},
+            *[
+                {"role": "user" if s=="You" else "assistant", "content": m}
+                for s,m in st.session_state.history
+            ]
+        ],
+        max_tokens=300
+    )
+    ans = resp.choices[0].message.content.strip()
+
+    # Save Anixva’s reply
+    st.session_state.history.append(("Anixva", ans))
+
+    # Clear input
+    st.session_state.inp = ""
+
+    # Rerun to show the new message
+    st.experimental_rerun()
